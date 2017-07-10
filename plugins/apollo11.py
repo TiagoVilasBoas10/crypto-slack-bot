@@ -98,24 +98,27 @@ class Apollo11Bot(object):
         return coin
 
     @staticmethod
-    def getExchangesError():
-        message = '`ERROR` Invalid exchange. Please use one from above: \n '
+    def getExchangesMessage(error=True):
+        if error:
+            message = '`ERROR` Invalid exchange. Please use one from above: \n '
+        else:
+            message = 'Markets list sort by 24h volume: \n'
 
         message += '```'
 
         db = sqlite3.connect('bot.db')
         cursor = db.cursor()
 
-        cursor.execute('select * from exchanges')
+        cursor.execute('select * from exchanges ORDER BY volume24h DESC')
 
         result = cursor.fetchall()
 
         for i in result:
-            message += " %s \n" % i[0]
+            if error:
+                message += " %s\n" % (i[0])
+            else:
+                message += " %s - $ %s \n" % (i[0], i[1])
 
-        message += '\n'
-        message += '\n'
-        message += 'Example: !btc coinbase'
         message += '```'
 
         return message
@@ -152,7 +155,40 @@ class Apollo11Bot(object):
 
 instance = Apollo11Bot()
 
-@listen_to('^!(.*) ?(.*)?', re.IGNORECASE)
+
+@listen_to('^.markets$', re.IGNORECASE)
+def markets(message):
+
+    exchanges_message = instance.getExchangesMessage(False)
+    message.send(exchanges_message)
+
+@listen_to('^.help admin$', re.IGNORECASE)
+def help_admin(message):
+    help_message = "Hello! I'm apollo11.  Here's how to use admin commands: \n\n" + \
+                   " _Init_: \n" + \
+                   "    `.admin init`\n" + \
+                   " _Update_: \n" + \
+                   "    `.admin update markets`\n" + \
+                   " "
+    message.send(help_message)
+
+@listen_to('^.help$', re.IGNORECASE)
+def help(message):
+    help_message = "Hello! I'm apollo11.  Here's how to use me: \n\n" + \
+                   " _Current market_: \n" + \
+                   "    `!<symbol> <market>` -- Market is optional (Default=Kraken)\n" + \
+                   "    Examples: \n" + \
+                   "    `!btc`\n" + \
+                   "    `!eth coinbase` -- for ethereum\n" + \
+                   "    `!xrp poloniex` -- for ripple\n" + \
+                   "    `!ltc` -- for litecoin\n" + \
+                   " _Markets_:\n" + \
+                   "    `.markets` -- shows a list of available markets\n" + \
+                   " "
+    message.send(help_message)
+
+
+@listen_to('^!(.*) ?(.*)?$', re.IGNORECASE)
 def star(*arg):
     message = arg[0]
     query = arg[1]
@@ -180,6 +216,6 @@ def star(*arg):
         if exchange:
             response = instance.request_crypto_compare(star, exchange)
         else:
-            response = instance.getExchangesError()
+            response = instance.getExchangesMessage()
 
     message.send(response)

@@ -84,14 +84,14 @@ class AdminBot(object):
 
 instance = AdminBot()
 
-@listen_to('^!admin init', re.IGNORECASE)
+@listen_to('^.admin init$', re.IGNORECASE)
 def init(*arg):
     message = arg[0]
 
     message.send(instance.admin_init())
 
-@listen_to('^!admin update exchanges', re.IGNORECASE)
-def init(*arg):
+@listen_to('^.admin update exchanges$', re.IGNORECASE)
+def update_exchanges(*arg):
     message = arg[0]
 
     message.send(instance.admin_update_exchanges())
