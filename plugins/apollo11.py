@@ -4,6 +4,8 @@ import re
 import json
 import requests
 import sqlite3
+import plotly.plotly as py
+import plotly.graph_objs as go
 
 from coinmarketcap import Market
 from slackbot.bot import listen_to
@@ -123,6 +125,18 @@ class Apollo11Bot(object):
 
         return message
 
+
+    @staticmethod
+    def getExchanges(limit=5):
+        db = sqlite3.connect('bot.db')
+        cursor = db.cursor()
+
+        cursor.execute('select * from exchanges ORDER BY volume24h DESC LIMIT :limit', {"limit":limit})
+
+        result = cursor.fetchall()
+
+        return result
+
     @staticmethod
     def getCoinNotFoundError(message=None, subMessage=None):
         message = '`ERROR` %s.' % message
@@ -155,6 +169,27 @@ class Apollo11Bot(object):
 
 instance = Apollo11Bot()
 
+@listen_to('^.markets plot$', re.IGNORECASE)
+def markets(message):
+    ##### CHANGE ME #####
+    py.sign_in('user', 'key')
+
+    exchanges = instance.getExchanges()
+    print(exchanges)
+    x = []
+    y = []
+
+    for i in exchanges:
+        x.append(i[0])
+        y.append(i[1])
+
+    trace = go.Bar(x=x, y=y)
+    data = [trace]
+    layout = go.Layout(title='Markets 24h volume', width=800, height=640)
+    fig = go.Figure(data=data, layout=layout)
+
+    py.image.save_as(fig, filename='a-simple-plot.png')
+    message.channel.upload_file("Markets 24h volume", "a-simple-plot.png")
 
 @listen_to('^.markets$', re.IGNORECASE)
 def markets(message):

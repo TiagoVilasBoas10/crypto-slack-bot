@@ -3,3 +3,4 @@ responses>=0.4.0
 requests>=2.7.0
 Flask>=0.10.1
 coinmarketcap
+plotly
